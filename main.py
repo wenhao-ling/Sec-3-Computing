@@ -16,7 +16,7 @@ class player(object):
 sprite = player(230, 130, 20, 20) # width is the perimeter thickness
 # ^ is setting the name for player class to "sprite" 
 
-Clock = pygame.time.Clock() # idk what this is ashton helped me do it (fps thing)
+Clock = pygame.time.Clock() # idk what this is i think its fps thing
 
 SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 300
@@ -31,13 +31,16 @@ POPUP_HEIGHT = 200
 
 PUZZLE1_X = 300
 PUZZLE1_Y = 0
-PUZZLE1_WIDTH = 50
-PUZZLE1_HEIGHT = 10
-PUZZLE2_X = 300
+PUZZLE1_WIDTH = 60
+PUZZLE1_HEIGHT = 30
+PUZZLE2_X = 340
 PUZZLE2_Y = 290
-PUZZLE2_WIDTH = 50
+PUZZLE2_WIDTH = 80
 PUZZLE2_HEIGHT = 10
-leftClick, scrollClick, rightClick = pygame.mouse.get_pressed()
+PUZZLE3_X = 100
+PUZZLE3_Y = 280
+PUZZLE3_WIDTH = 40
+PUZZLE3_HEIGHT = 20
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 door = pygame.image.load("door.png")
@@ -45,11 +48,34 @@ door_rect = pygame.Rect(0,0,DOOR_WIDTH,DOOR_HEIGHT)
 colour_door_rect = (255,255,255)
 xbutton = pygame.image.load("xbutton.png")
 puzzle1_rect = pygame.Rect(PUZZLE1_X,PUZZLE1_Y,PUZZLE1_WIDTH,PUZZLE1_HEIGHT)
-# puzzle2_rect = pyga
+# colour, correct order = 132
+puzzle1_square1 = pygame.Rect(150,125,50,50)
+puzzle1_square2 = pygame.Rect(225,125,50,50)
+puzzle1_square3 = pygame.Rect(300,125,50,50)
+puzzle1_square1_pressed = False
+puzzle1_square2_pressed = False
+puzzle1_square3_pressed = False
+puzzle2_rect = pygame.Rect(PUZZLE2_X,PUZZLE2_Y,PUZZLE2_WIDTH,PUZZLE2_HEIGHT)
+# width, correct order = 321 
+puzzle2_square1 = pygame.Rect(150,125,30,50)
+puzzle2_square2 = pygame.Rect(210,125,70,50)
+puzzle2_square3 = pygame.Rect(300,125,50,50)
+puzzle2_square1_pressed = False
+puzzle2_square2_pressed = False
+puzzle2_square3_pressed = False
+puzzle3_rect = pygame.Rect(PUZZLE3_X,PUZZLE3_Y,PUZZLE3_WIDTH,PUZZLE3_HEIGHT)
+# height, correct order = 231
+puzzle3_square1 = pygame.Rect(150,125,50,50)
+puzzle3_square2 = pygame.Rect(225,125,50,60)
+puzzle3_square3 = pygame.Rect(300,125,50,40)
+puzzle3_square1_pressed = False
+puzzle3_square2_pressed = False
+puzzle3_square3_pressed = False
 haveKey = False
 haveTouchedDoorOnce = False
 puzzle1_complete = False
 puzzle2_complete = False
+puzzle3_complete = False
 inPopup = False
 
 running = True
@@ -69,13 +95,14 @@ def redrawScreen():
   
   refreshHitbox() # refresh hitbox, need the "-sprite.radius" bc sprite.x and y is in the middle of circle
   pygame.draw.rect(screen,(255,255,255),sprite.hitbox) # draw hitbox under sprite
-  pygame.draw.circle(screen,(0,0,255),(sprite.x, sprite.y), sprite.radius, sprite.width) # draw sprite
+  pygame.draw.circle(screen,(0,0,100),(sprite.x, sprite.y), sprite.radius, sprite.width) # draw sprite
   
   pygame.draw.rect(screen,colour_door_rect,door_rect) # draw hitbox under door image
   screen.blit(pygame.transform.scale(door,(DOOR_WIDTH, DOOR_HEIGHT)), (0,0)) # draw door image
 
   pygame.draw.rect(screen,(0,255,0) if puzzle1_complete else (255,0,0),puzzle1_rect) # draw red puzzle 1, if complete then green
-  
+  pygame.draw.rect(screen,(0,255,0) if puzzle2_complete else (255,255,0),puzzle2_rect) # draw puzzle 2
+  pygame.draw.rect(screen,(0,255,0) if puzzle3_complete else (0,0,255),puzzle3_rect) # draw puzzle 3
   
   pygame.display.update()
 
@@ -92,13 +119,25 @@ def isTouchingPuzzle1():
     return True
 
 
+def isTouchingPuzzle2():
+  sprite_rect = pygame.Rect(sprite.hitbox)
+  if sprite_rect.colliderect(puzzle2_rect): 
+    return True
+
+
+def isTouchingPuzzle3():
+  sprite_rect = pygame.Rect(sprite.hitbox)
+  if sprite_rect.colliderect(puzzle3_rect): 
+    return True
+
+
 def drawText(text, font, colour, x, y): 
   img = font.render(text, True, colour)
   screen.blit(img, (x,y))
   pygame.display.flip()
   
 
-def createPopup():
+def createPopup(): # popup parameters not customisable due to convenience
   pygame.draw.rect(screen,(0,0,0),(POPUP_X,POPUP_Y,POPUP_WIDTH,POPUP_HEIGHT)) # draw border behind
   pygame.draw.rect(screen,(230,230,230),(POPUP_X+2,POPUP_Y+2,POPUP_WIDTH-4,POPUP_HEIGHT-4)) # draw inner rect
 
@@ -107,7 +146,7 @@ def createPopup():
   pygame.display.flip()
   
 
-def isClickingX(): # input same parameters as createPopup function
+def isClickingX(): 
   mousePos = pygame.mouse.get_pos()
   xbutton_rect = pygame.Rect(POPUP_X+POPUP_WIDTH-XBUTTON_WIDTH, POPUP_Y, XBUTTON_WIDTH, XBUTTON_WIDTH)
   if pygame.mouse.get_pressed()[0] and xbutton_rect.collidepoint(mousePos):
@@ -120,6 +159,12 @@ while running:
 
   if inPopup: 
     if isClickingX():
+      if isTouchingPuzzle1():
+        sprite.y += 10
+        refreshHitbox()
+      if isTouchingPuzzle2() or isTouchingPuzzle3():
+        sprite.y -= 10
+        refreshHitbox()
       inPopup = False # exits popup
   
   for event in pygame.event.get():
@@ -144,8 +189,8 @@ while running:
 
   if isTouchingDoor(): 
     if haveKey:
-      createPopup()
-      drawText("yippee you have completed the game", text_font, (0,0,0), 100, 100)
+      screen.fill((255,255,255))
+      drawText("yippee you have ESCAPED THE ROOM", text_font, (0,0,0), 70, 100)
       time.sleep(3)
       running = False
       break
@@ -159,11 +204,114 @@ while running:
       haveTouchedDoorOnce = True
 
   if isTouchingPuzzle1():
-    sprite.y += 10
-    refreshHitbox()
     inPopup = True
     createPopup()
-    
+    drawText("clockwise", text_font, (0,0,0), 200, 80)
+    pygame.draw.rect(screen,(255,0,0),puzzle1_square1)
+    pygame.draw.rect(screen,(0,0,255),puzzle1_square2)
+    pygame.draw.rect(screen,(255,255,0),puzzle1_square3)
+    pygame.display.flip() 
+    # correct pressing order = square1, square3, square2
+    if pygame.mouse.get_pressed()[0] and puzzle1_square1.collidepoint(pygame.mouse.get_pos()):
+      puzzle1_square1_pressed = True
+      puzzle1_square2_pressed = False
+      puzzle1_square3_pressed = False
+
+    if pygame.mouse.get_pressed()[0] and puzzle1_square3.collidepoint(pygame.mouse.get_pos()):
+      if puzzle1_square1_pressed and not puzzle1_square2_pressed:
+        puzzle1_square3_pressed = True
+      else: 
+        puzzle1_square1_pressed = False
+        puzzle1_square2_pressed = False
+        puzzle1_square3_pressed = False
+        
+    if pygame.mouse.get_pressed()[0] and puzzle1_square2.collidepoint(pygame.mouse.get_pos()):
+      if puzzle1_square3_pressed and puzzle1_square1_pressed:
+        # correct order
+        puzzle1_complete = True
+        redrawScreen()
+      else: 
+        puzzle1_square1_pressed = False
+        puzzle1_square2_pressed = False
+        puzzle1_square3_pressed = False
+
+
+  if isTouchingPuzzle2():
+    inPopup = True
+    createPopup()
+    pygame.draw.rect(screen,(0,0,0),puzzle2_square1)
+    pygame.draw.rect(screen,(0,0,0),puzzle2_square2)
+    pygame.draw.rect(screen,(0,0,0),puzzle2_square3)
+    pygame.display.flip() 
+    # correct pressing order = square3, square2, square1
+    if pygame.mouse.get_pressed()[0] and puzzle2_square3.collidepoint(pygame.mouse.get_pos()):
+      puzzle2_square3_pressed = True
+      puzzle2_square2_pressed = False
+      puzzle2_square1_pressed = False
+
+    if pygame.mouse.get_pressed()[0] and puzzle2_square2.collidepoint(pygame.mouse.get_pos()):
+      if puzzle2_square3_pressed and not puzzle2_square1_pressed:
+        puzzle2_square2_pressed = True
+      else: 
+        puzzle2_square1_pressed = False
+        puzzle2_square2_pressed = False
+        puzzle2_square3_pressed = False
+        
+    if pygame.mouse.get_pressed()[0] and puzzle2_square1.collidepoint(pygame.mouse.get_pos()):
+      if puzzle2_square3_pressed and puzzle2_square2_pressed:
+        # correct order
+        puzzle2_complete = True
+        redrawScreen()
+      else: 
+        puzzle2_square1_pressed = False
+        puzzle2_square2_pressed = False
+        puzzle2_square3_pressed = False
+
+  if isTouchingPuzzle3():
+    inPopup = True
+    createPopup()
+    pygame.draw.rect(screen,(0,0,0),puzzle3_square1)
+    pygame.draw.rect(screen,(0,0,0),puzzle3_square2)
+    pygame.draw.rect(screen,(0,0,0),puzzle3_square3)
+    pygame.display.flip() 
+    # correct pressing order = square2, square3, square1
+    if pygame.mouse.get_pressed()[0] and puzzle3_square2.collidepoint(pygame.mouse.get_pos()):
+      puzzle3_square2_pressed = True
+      puzzle3_square3_pressed = False
+      puzzle3_square1_pressed = False
+
+    if pygame.mouse.get_pressed()[0] and puzzle3_square3.collidepoint(pygame.mouse.get_pos()):
+      if puzzle3_square2_pressed and not puzzle3_square1_pressed:
+        puzzle3_square3_pressed = True
+      else: 
+        puzzle3_square1_pressed = False
+        puzzle3_square2_pressed = False
+        puzzle3_square3_pressed = False
+        
+    if pygame.mouse.get_pressed()[0] and puzzle3_square1.collidepoint(pygame.mouse.get_pos()):
+      if puzzle3_square3_pressed and puzzle3_square2_pressed:
+        # correct order
+        puzzle3_complete = True
+        redrawScreen()
+      else: 
+        puzzle3_square1_pressed = False
+        puzzle3_square2_pressed = False
+        puzzle3_square3_pressed = False
+
+  
+  if puzzle1_complete and puzzle2_complete and puzzle3_complete and not haveKey and inPopup: 
+    if isTouchingPuzzle1():
+      sprite.y += 10
+      refreshHitbox()
+    if isTouchingPuzzle2() or isTouchingPuzzle3():
+      sprite.y -= 10
+      refreshHitbox()
+    time.sleep(1)
+    haveKey = True
+    inPopup = True
+    createPopup()
+    drawText("You have found the key", text_font, (0,0,0), 140, 100)
+  
   
   if not inPopup:
     redrawScreen()
